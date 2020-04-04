@@ -1,0 +1,28 @@
+{
+  "name": "twitter-toxic-bot-filter-api",
+  "version": "1.0.0",
+  "description": "",
+  "main": "src/index.ts",
+  "scripts": {
+    "start": "nodemon src/index.ts",
+    "debug": "nodemon --inspect-brk src/index.ts",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@hapi/boom": "^9.1.0",
+    "@hapi/hapi": "^19.1.1",
+    "@hapi/joi": "^17.1.1",
+    "mysql": "^2.18.1",
+    "reflect-metadata": "^0.1.13",
+    "typeorm": "^0.2.24"
+  },
+  "devDependencies": {
+    "@types/hapi__hapi": "^19.0.2",
+    "@types/hapi__joi": "^16.0.12",
+    "@types/node": "^13.11.0",
+    "ts-node": "^8.8.1",
+    "typescript": "^3.8.3"
+  }
+}
