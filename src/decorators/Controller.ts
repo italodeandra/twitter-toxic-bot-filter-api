@@ -2,7 +2,7 @@ import { RouteOptions, RouteOptionsValidate } from '@hapi/hapi'
 import { routes } from '../api/api'
 
 export function Controller(path: string, auth?: boolean) {
-    return function () {
+    return function (_constructor: any) {
         for (let route of routes) {
             if (!route.controlled) {
                 route.controlled = true
