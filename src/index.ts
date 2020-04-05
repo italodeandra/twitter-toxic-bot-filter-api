@@ -1,16 +1,18 @@
 'use strict'
 
-import * as Hapi from '@hapi/hapi'
-import api from './api/api'
 import 'reflect-metadata'
+import * as Hapi from '@hapi/hapi'
+import { Request } from '@hapi/hapi'
+import api from './api/api'
 import db from './db'
 import Boom from '@hapi/boom'
+import UserService from './api/User/UserService'
 
 const init = async () => {
 
     const server = new Hapi.Server({
         port: 3001,
-        host: '192.168.17.102',
+        host: '0.0.0.0',
         routes: {
             cors: true,
             validate: {
@@ -28,6 +30,20 @@ const init = async () => {
                     }
                 }
             }
+        }
+    })
+
+    await server.register(require('./plugins/authentication/authentication'))
+
+    server.auth.strategy('twitter-basic', 'twitter-basic', {
+        async validate(request: Request, accessToken: string, accessTokenSecret: string) {
+            let isValid = true
+
+            const userService = new UserService()
+
+            let user = await userService.getInfoFromTwitterAndSave(accessToken, accessTokenSecret)
+
+            return { isValid, credentials: user }
         }
     })
 
