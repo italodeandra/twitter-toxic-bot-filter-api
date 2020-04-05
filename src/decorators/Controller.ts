@@ -1,14 +1,20 @@
-import { RouteOptionsValidate, ServerRoute } from '@hapi/hapi'
+import { RouteOptions, RouteOptionsValidate } from '@hapi/hapi'
+import { routes } from '../api/api'
 
-export class ControllerType extends Function {
-    routes?: ServerRoute[]
-}
-
-export function Controller(path: string) {
-    return function (constructor: ControllerType) {
-        if (constructor.routes && path) {
-            for (let route of constructor.routes) {
-                route.path = path + (route.path || '')
+export function Controller(path: string, auth?: boolean) {
+    return function () {
+        for (let route of routes) {
+            if (!route.controlled) {
+                route.controlled = true
+                if (path) {
+                    route.path = path + (route.path || '')
+                }
+                if (auth) {
+                    route.options = {
+                        ...route.options,
+                        auth: 'twitter-basic',
+                    } as RouteOptions
+                }
             }
         }
     }
@@ -18,21 +24,29 @@ export function Controller(path: string) {
 interface Options {
     path?: string
     validate?: RouteOptionsValidate
+    auth?: boolean
 }
 
 function Method(method: string, path?: string, options?: Options) {
+    let routeOptions: RouteOptions = {}
+
     if (options) {
         path = options.path
-        delete options.path
+
+        if (options.auth) {
+            routeOptions = {
+                validate: options?.validate,
+                auth: 'twitter-basic',
+            } as RouteOptions
+        }
     }
 
     return function (target: any, propertyKey: string) {
-        target.constructor.routes = target.constructor.routes || []
-        target.constructor.routes.push({
+        routes.push({
             method,
             path,
-            handler: target[propertyKey],
-            options: options
+            handler: target[propertyKey].bind(target),
+            options: routeOptions,
         })
     }
 }

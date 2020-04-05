@@ -1,15 +1,16 @@
 import { Server } from '@hapi/hapi'
-import HealthCheckController from './HealthCheck/HealthCheckController'
-import { ControllerType } from '../decorators/Controller'
-import FeedbackController from './Feedback/FeedbackController'
+import './User/UserController'
+import './Feedback/FeedbackController'
+import './HealthCheck/HealthCheckController'
+import './TweetTrap/TweetTrapController'
 
-const routes = [
-    ...(HealthCheckController as ControllerType).routes!,
-    ...(FeedbackController as ControllerType).routes!
-]
+export const routes: any = []
 
 export default {
     addRoutes(server: Server) {
-        server.route(routes)
+        server.route(routes.map((route: any) => {
+            delete route.controlled
+            return route
+        }))
     }
 }
