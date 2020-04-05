@@ -1,7 +1,7 @@
-import { Controller, ControllerType, Get } from '../../decorators/Controller'
+import { Controller, Get } from '../../decorators/Controller'
 
 @Controller('/health-check')
-export default class HealthCheckController extends ControllerType {
+export default class HealthCheckController {
 
     @Get()
     healthCheck() {
