@@ -1,7 +1,9 @@
-POST http://localhost:3000/feedback
+POST http://localhost:3001/feedback
 Content-Type: application/json
+Authorization: Bearer eyJpZCI6MSwic2NyZWVuTmFtZSI6InRlc3QifQ==
 
 {
+  "rate": 4,
   "message": "test"
 }
 

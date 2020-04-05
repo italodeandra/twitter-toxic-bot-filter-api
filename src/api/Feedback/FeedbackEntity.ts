@@ -1,4 +1,5 @@
-import { BaseEntity, Column, Entity, PrimaryGeneratedColumn } from 'typeorm'
+import { BaseEntity, Column, Entity, ManyToOne, PrimaryGeneratedColumn } from 'typeorm'
+import { User } from '../User/UserEntity'
 
 @Entity()
 export class Feedback extends BaseEntity {
@@ -11,5 +12,8 @@ export class Feedback extends BaseEntity {
 
     @Column({ length: 1500 })
     message!: string
+
+    @ManyToOne(_type => User)
+    createdBy!: User
 
 }

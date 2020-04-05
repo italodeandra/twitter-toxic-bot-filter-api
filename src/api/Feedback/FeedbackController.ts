@@ -1,10 +1,11 @@
-import { Controller, ControllerType, Post } from '../../decorators/Controller'
+import { Controller, Post } from '../../decorators/Controller'
 import { Request } from '@hapi/hapi'
 import Joi from '@hapi/joi'
 import { Feedback } from './FeedbackEntity'
+import { User } from '../User/UserEntity'
 
-@Controller('/feedback')
-export default class HealthCheckController extends ControllerType {
+@Controller('/feedback', true)
+export default class FeedbackController {
 
     @Post({
         validate: {
@@ -15,9 +16,11 @@ export default class HealthCheckController extends ControllerType {
         }
     })
     async save(request: Request) {
-        const payload = request.payload as Feedback
+        let payload = request.payload as Feedback
+        let user = request.auth.credentials as User
 
         const feedback = await Feedback.create(payload)
+        feedback.createdBy = user!
         await feedback.save()
 
         return { message: 'Thank you for your feedback' }
