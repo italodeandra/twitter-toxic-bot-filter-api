@@ -1,15 +1,16 @@
 import { createConnection } from 'typeorm'
+import config from './config/config'
 
 const db = {
     connected: false,
     async start() {
         await createConnection({
             type: 'mysql',
-            host: 'localhost',
-            port: 3306,
-            username: 'root',
-            password: 'root',
-            database: 'twitter_toxic_bot_filter',
+            host: config.database.host,
+            port: +config.database.port,
+            username: config.database.username,
+            password: config.database.password,
+            database: config.database.database,
             entities: [
                 __dirname + '/api/**/*Entity.ts'
             ],
