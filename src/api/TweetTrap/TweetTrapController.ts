@@ -8,7 +8,7 @@ import Joi from '@hapi/joi'
 import Boom from '@hapi/boom'
 import { Socket } from 'socket.io'
 import { SocketOn } from '../../decorators/SocketOn'
-import { prepareLogger } from '../Log/LogEntity'
+import { logger, prepareLogger } from '../Log/LogEntity'
 
 @Controller('/tweet-trap', true)
 export default class HealthCheckController {
@@ -83,6 +83,24 @@ export default class HealthCheckController {
             access_token_key: user.accessToken,
             access_token_secret: user.accessTokenSecret
         })
+
+        try {
+            // check if tweet still exists
+            await client.get('statuses/show', {
+                id
+            })
+        } catch (e) {
+            if (e.errors[0].code === 144) {
+                // delete the tweet from database
+                const tweetTrap = await TweetTrap.findOne({ where: { id } })
+                if (tweetTrap) {
+                    await tweetTrap.remove()
+                }
+                throw Boom.notFound('Tweet not found')
+            } else {
+                logger('error', 'api', 'TweetTrapController.getReplies', e, id, user)
+            }
+        }
 
         let statuses = await client.get('statuses/mentions_timeline', {
             // q: 'to:' + user.screenName,
