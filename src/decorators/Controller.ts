@@ -32,12 +32,10 @@ function Method(method: string, path?: string, options?: Options) {
 
     if (options) {
         path = options.path
+        routeOptions.validate = options?.validate
 
         if (options.auth) {
-            routeOptions = {
-                validate: options?.validate,
-                auth: 'twitter-basic',
-            } as RouteOptions
+            routeOptions.auth = 'twitter-basic'
         }
     }
 
@@ -51,8 +49,14 @@ function Method(method: string, path?: string, options?: Options) {
     }
 }
 
-export function Get(path?: string) {
-    return Method('GET', path)
+export function Get(path?: string): any
+export function Get(options?: Options): any
+export function Get(x: any) {
+    if (typeof x === 'string') {
+        return Method('GET', x)
+    } else {
+        return Method('GET', undefined, x)
+    }
 }
 
 export function Post(path?: string): any

@@ -1,9 +1,9 @@
-import { BaseEntity, Column, Entity, PrimaryColumn } from 'typeorm'
+import { BaseEntity, Column, CreateDateColumn, Entity, PrimaryColumn, UpdateDateColumn } from 'typeorm'
 
 @Entity()
 export class User extends BaseEntity {
 
-    @PrimaryColumn()
+    @PrimaryColumn({ type: 'bigint' })
     id!: string
 
     @Column()
@@ -20,5 +20,11 @@ export class User extends BaseEntity {
 
     @Column()
     profileImageUrl?: string
+
+    @CreateDateColumn()
+    createdAt!: Date
+
+    @UpdateDateColumn()
+    updatedAt!: Date
 
 }

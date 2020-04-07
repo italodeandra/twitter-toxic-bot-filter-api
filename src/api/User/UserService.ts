@@ -19,7 +19,7 @@ export default class UserService {
             id = response.id_str
             screenName = response.screen_name
             name = response.name
-            profileImageUrl = response.profile_image_url_https
+            profileImageUrl = response.profile_image_url_https.replace('normal.', '200x200.')
         } catch (e) {
             console.error(e)
             throw Boom.unauthorized('Twitter token expired', 'Bearer')

@@ -1,0 +1,1 @@
+declare module 'node-botometer-rapid-api';

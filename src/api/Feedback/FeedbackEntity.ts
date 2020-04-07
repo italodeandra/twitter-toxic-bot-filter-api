@@ -1,4 +1,4 @@
-import { BaseEntity, Column, Entity, ManyToOne, PrimaryGeneratedColumn } from 'typeorm'
+import { BaseEntity, Column, CreateDateColumn, Entity, ManyToOne, PrimaryGeneratedColumn } from 'typeorm'
 import { User } from '../User/UserEntity'
 
 @Entity()
@@ -15,5 +15,8 @@ export class Feedback extends BaseEntity {
 
     @ManyToOne(_type => User)
     createdBy!: User
+
+    @CreateDateColumn()
+    createdAt!: Date
 
 }

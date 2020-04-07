@@ -1,10 +1,13 @@
 import { Server } from '@hapi/hapi'
-import './User/UserController'
-import './Feedback/FeedbackController'
-import './HealthCheck/HealthCheckController'
-import './TweetTrap/TweetTrapController'
 
 export const routes: any = []
+
+require('./User/UserController')
+require('./Feedback/FeedbackController')
+require('./HealthCheck/HealthCheckController')
+require('./TweetTrap/TweetTrapController')
+require('./BotScore/BotScoreController')
+require('./Mute/MuteController')
 
 export default {
     addRoutes(server: Server) {

@@ -7,6 +7,9 @@ import api from './api/api'
 import db from './db'
 import Boom from '@hapi/boom'
 import UserService from './api/User/UserService'
+import socket from './socket'
+import { logger } from './api/Log/LogEntity'
+import { User } from './api/User/UserEntity'
 
 const init = async () => {
 
@@ -51,13 +54,38 @@ const init = async () => {
 
     await server.start()
 
+    await socket.start(server)
+
     await db.start()
+
+    server.events.on('response', (request) => {
+        const user = request.auth.credentials as User
+
+        const response: any = request.response as any
+
+        logger(response.statusCode !== 500 ? 'info' : 'error', 'server', 'request', {
+            params: request.params,
+            query: request.query,
+            payload: request.payload,
+            headers: request.headers,
+            response: {
+                statusCode: response.statusCode,
+                data: response.statusCode !== 200 ? response.source : undefined
+            },
+            error: response._error ? {
+                data: response._error.data,
+                stack: response._error.stack,
+                message: response._error.message
+            } : undefined
+        }, request.route.path, user)
+    })
 
     console.log('Server running on %s', server.info.uri)
 }
 
 process.on('unhandledRejection', (err) => {
-    console.log(err)
+    logger('error', 'server', 'unhandledRejection', err)
+    console.error(err)
     process.exit(1)
 })
 

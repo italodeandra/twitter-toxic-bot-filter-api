@@ -1,6 +1,7 @@
 import { createConnection } from 'typeorm'
 
-export default {
+const db = {
+    connected: false,
     async start() {
         await createConnection({
             type: 'mysql',
@@ -15,5 +16,8 @@ export default {
             synchronize: true,
             logging: false
         })
+        db.connected = true
     }
 }
+
+export default db
