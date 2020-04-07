@@ -182,7 +182,7 @@ export default class HealthCheckController {
                           createdAt: new Date(t.created_at)
                       }
                       logger(tweet)
-                      socket.emit('newTweetTrapReply',)
+                      socket.emit('newTweetTrapReply', tweet)
                   }
               })
               .on('ping', () => logger('stream ping'))
@@ -194,7 +194,7 @@ export default class HealthCheckController {
                       statusText: error.statusText
                   })
                   socket.emit('tweetTrapReplyAutoSync', false)
-                  if (wait > 2147483647) {
+                  if (wait > 2147483647 / 1000) {
                       handleExitStream()
                   } else {
                       timer = setTimeout(subscribeStream, wait * 1000)
