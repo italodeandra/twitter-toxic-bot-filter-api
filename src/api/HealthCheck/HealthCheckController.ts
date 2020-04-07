@@ -1,6 +1,6 @@
 import { Controller, Get } from '../../decorators/Controller'
 
-@Controller('/health-check')
+@Controller('/')
 export default class HealthCheckController {
 
     @Get()
