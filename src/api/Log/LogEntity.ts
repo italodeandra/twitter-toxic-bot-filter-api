@@ -1,6 +1,5 @@
 import { BaseEntity, Column, CreateDateColumn, Entity, ManyToOne, PrimaryGeneratedColumn } from 'typeorm'
 import { User } from '../User/UserEntity'
-import db from '../../db'
 
 @Entity()
 export class Log extends BaseEntity {
@@ -66,10 +65,10 @@ export function logger(
         identity,
         createdBy
     }
-    if (db.connected) {
+    try {
         const log = Log.create(logData)
         return log.save()
-    } else {
+    } catch (e) {
         console.error('[OFFLINE LOG]', logData)
     }
 }
