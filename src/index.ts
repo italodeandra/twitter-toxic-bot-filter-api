@@ -10,12 +10,13 @@ import UserService from './api/User/UserService'
 import socket from './socket'
 import { logger } from './api/Log/LogEntity'
 import { User } from './api/User/UserEntity'
+import config from './config/config'
 
 const init = async () => {
 
     const server = new Hapi.Server({
-        port: 3001,
-        host: '0.0.0.0',
+        port: config.port,
+        host: config.apiHost,
         routes: {
             cors: true,
             validate: {

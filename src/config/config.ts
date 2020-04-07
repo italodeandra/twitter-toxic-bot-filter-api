@@ -1,4 +1,6 @@
 export default {
+    port: process.env.PORT || 3001,
+    apiHost: process.env.API_HOST || '0.0.0.0',
     webUrl: process.env.API_WEB_URL || 'http://192.168.17.103:3000/',
     twitterConsumerApiKey: process.env.API_TWITTER_CONSUMER_API_KEY || 'kCkSebfJEIEx5ZPo7I7yJPub5',
     twitterConsumerApiSecretKey: process.env.API_TWITTER_CONSUMER_API_SECRET_KEY || '3coFZCfs1mjzBICWuO20NwsLEgnkYqSOTPQDTmUQPBTnd0LYYA',
