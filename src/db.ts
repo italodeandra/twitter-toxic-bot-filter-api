@@ -12,7 +12,7 @@ const db = {
             password: config.database.password,
             database: config.database.database,
             entities: [
-                __dirname + '/api/**/*Entity.ts'
+                __dirname + '/api/**/*Entity.*'
             ],
             synchronize: true,
             logging: false
