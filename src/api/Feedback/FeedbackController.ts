@@ -11,7 +11,7 @@ export default class FeedbackController {
         validate: {
             payload: Joi.object({
                 rate: Joi.number().min(0).max(5).required(),
-                message: Joi.string().max(1500)
+                message: Joi.string().max(1500).optional().allow('')
             }).options({ stripUnknown: true })
         }
     })
