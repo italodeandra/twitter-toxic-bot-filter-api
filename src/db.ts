@@ -1,5 +1,5 @@
 import { createConnection } from 'typeorm'
-import config from './config/config'
+import config from './config'
 
 const db = {
     connected: false,

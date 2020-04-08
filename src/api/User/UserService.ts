@@ -1,5 +1,5 @@
 import Twitter from 'twitter-lite'
-import config from '../../config/config'
+import config from '../../config'
 import Boom from '@hapi/boom'
 import { User } from './UserEntity'
 

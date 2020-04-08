@@ -10,7 +10,7 @@ import UserService from './api/User/UserService'
 import socket from './socket'
 import { logger } from './api/Log/LogEntity'
 import { User } from './api/User/UserEntity'
-import config from './config/config'
+import config from './config'
 
 const init = async () => {
 

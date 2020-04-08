@@ -1,7 +1,7 @@
 import { Controller, Get } from '../../decorators/Controller'
 import { Request } from '@hapi/hapi'
 import Botometer from 'node-botometer-rapid-api'
-import config from '../../config/config'
+import config from '../../config'
 import Joi from '@hapi/joi'
 
 @Controller('/bot-score', true)

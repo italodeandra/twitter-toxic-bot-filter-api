@@ -2,7 +2,7 @@ import { Controller, Post } from '../../decorators/Controller'
 import Joi from '@hapi/joi'
 import { Request } from '@hapi/hapi'
 import Twitter from 'twitter-lite'
-import config from '../../config/config'
+import config from '../../config'
 import { User } from '../User/UserEntity'
 
 @Controller('/mute')
