@@ -2,6 +2,7 @@ import Twitter from 'twitter-lite'
 import config from '../../config'
 import Boom from '@hapi/boom'
 import { User } from './UserEntity'
+import { logError } from '../../utils/log'
 
 export default class UserService {
 
@@ -20,8 +21,14 @@ export default class UserService {
             screenName = response.screen_name
             name = response.name
             profileImageUrl = response.profile_image_url_https.replace('normal.', '200x200.')
-        } catch (e) {
-            console.error(e)
+        } catch (error) {
+            logError({
+                context: 'api',
+                api: 'User',
+                method: 'UserService.getInfoFromTwitterAndSave',
+                error,
+                message: 'Error trying to verify credentials form Twitter'
+            })
             throw Boom.unauthorized('Twitter token expired', 'Bearer')
         }
 

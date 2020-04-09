@@ -1,4 +1,5 @@
 export default {
+    env: process.env.NODE_ENV || 'development',
     port: process.env.PORT || 3001,
     apiHost: process.env.API_HOST || '0.0.0.0',
     webUrl: process.env.API_WEB_URL || 'http://localhost:3000/',

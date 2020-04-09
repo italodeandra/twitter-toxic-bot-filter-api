@@ -4,6 +4,7 @@ import { Request } from '@hapi/hapi'
 import Twitter from 'twitter-lite'
 import config from '../../config'
 import { User } from '../User/UserEntity'
+import Boom from '@hapi/boom'
 
 @Controller('/mute')
 export default class MuteController {
@@ -28,11 +29,13 @@ export default class MuteController {
         })
 
         for (let name of names) {
-            const res = await client.post('mutes/users/create', {
-                screen_name: name
-            })
-
-            console.log(res)
+            try {
+                await client.post('mutes/users/create', {
+                    screen_name: name
+                })
+            } catch (e) {
+                Boom.internal('It was not possible to mute all users', e)
+            }
         }
 
         return { message: 'Muted successfully' }

@@ -9,6 +9,7 @@ import Boom from '@hapi/boom'
 import { Socket } from 'socket.io'
 import { SocketOn } from '../../decorators/SocketOn'
 import { logError, prepareLog } from '../../utils/log'
+import isBigInt from '../../utils/isBigInt'
 
 @Controller('/tweet-trap', true)
 export default class HealthCheckController {
@@ -37,8 +38,12 @@ export default class HealthCheckController {
             })
             tweetTrapData.id = result.id_str
             tweetTrapData.createdBy = user
-        } catch (e) {
-            console.error(e)
+        } catch (error) {
+            if (error.errors?.[0].code === 187) { // duplicated tweet
+                throw Boom.conflict('Tweet duplicated. You can\'t tweet the same thing more than once.', { noLog: true })
+            } else {
+                throw Boom.internal('It was not possible to tweet', error)
+            }
         }
 
         let tweetTrap = await TweetTrap.create(tweetTrapData)
@@ -47,14 +52,21 @@ export default class HealthCheckController {
         return tweetTrap
     }
 
-    @Get('/{id}')
+    @Get({
+        path: '/{id}',
+        validate: {
+            params: Joi.object({
+                id: Joi.string().alphanum().custom(isBigInt, 'bigint').required()
+            })
+        }
+    })
     async get(request: Request): Promise<TweetTrap> {
         const id = request.params.id
 
         const tweetTrap = await TweetTrap.findOne({ where: { id } })
 
         if (!tweetTrap) {
-            throw Boom.notFound('Tweet not found')
+            throw Boom.notFound('Tweet not found', { noLog: true })
         }
 
         return tweetTrap
@@ -72,7 +84,14 @@ export default class HealthCheckController {
         })
     }
 
-    @Get('/{id}/replies')
+    @Get({
+        path: '/{id}/replies',
+        validate: {
+            params: Joi.object({
+                id: Joi.string().alphanum().custom(isBigInt, 'bigint').required()
+            })
+        }
+    })
     async getReplies(request: Request) {
         const id = request.params.id
         const user = request.auth.credentials as User
@@ -90,13 +109,12 @@ export default class HealthCheckController {
                 id
             })
         } catch (e) {
-            if (e.errors?.[0].code === 144) {
-                // delete the tweet from database
+            if (e.errors?.[0].code === 144) { // tweet not found
                 const tweetTrap = await TweetTrap.findOne({ where: { id } })
                 if (tweetTrap) {
                     await tweetTrap.remove()
                 }
-                throw Boom.notFound('Tweet not found')
+                throw Boom.notFound('Tweet not found', { noLog: true })
             } else {
                 logError({
                     context: 'api',
@@ -144,12 +162,10 @@ export default class HealthCheckController {
             user
         })
 
-        // const logger = prepareLogger('info', 'socket', 'subscribeTweetTrapReplies', id, user)
-
-        log.update({ message: 'socket connected' }).save()
+        // log.update({ message: 'socket connected' }).save()
 
         if (!user) {
-            log.update({ message: 'not authenticated' }).save()
+            // log.update({ message: 'not authenticated' }).save()
             return null
         }
 
@@ -168,7 +184,7 @@ export default class HealthCheckController {
             clearTimeout(timer)
             socket.emit('tweetTrapReplyAutoSync', false)
             if (stream && typeof stream.destroy === 'function') {
-                log.update({ message: 'stream exit' }).save()
+                // log.update({ message: 'stream exit' }).save()
                 process.nextTick(() => stream.destroy())
             }
             socket.off('unsubscribeTweetTrapReplies', handleExitStream)
@@ -182,7 +198,7 @@ export default class HealthCheckController {
               .on('start', (_response: any) => {
                   wait = 30
                   socket.emit('tweetTrapReplyAutoSync', true)
-                  log.update({ message: 'stream started' }).save()
+                  // log.update({ message: 'stream started' }).save()
               })
               .on('data', (t: any) => {
                   if (t.in_reply_to_status_id_str === id) {
@@ -197,13 +213,14 @@ export default class HealthCheckController {
                           },
                           createdAt: new Date(t.created_at)
                       }
-                      log.update({ message: 'new reply received', tweet }).save()
+                      // log.update({ message: 'new reply received', tweet }).save()
                       socket.emit('newTweetTrapReply', tweet)
                   }
               })
-              .on('ping', () => log.update({ message: 'stream ping' }).save())
+              // .on('ping', () => log.update({ message: 'stream ping' }).save())
               .on('error', (error: any) => {
                   log.update({
+                      type: 'error',
                       message: 'not able to stream. trying again in ' + wait + ' seconds',
                       error: {
                           source: error.source,
@@ -219,7 +236,7 @@ export default class HealthCheckController {
                       wait = wait + wait
                   }
               })
-              .on('end', (_response: any) => log.update({ message: 'stream end' }).save())
+            // .on('end', (_response: any) => log.update({ message: 'stream end' }).save())
 
             socket.on('unsubscribeTweetTrapReplies', handleExitStream)
             socket.on('disconnect', handleExitStream)
