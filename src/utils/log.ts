@@ -48,6 +48,7 @@ type Log = {
 export function prepareLog(preparedData: Log) {
     preparedData.type = preparedData.type || 'info'
     let data = { ...preparedData }
+    data.type = data.type || 'info'
 
     const methods = {
         update(updatedData: { [key: string]: any }) {
