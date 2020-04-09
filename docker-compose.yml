@@ -2,11 +2,18 @@ version: '3.1'
 
 services:
 
+#  db:
+#    image: mysql:5.7
+#    command: --default-authentication-plugin=mysql_native_password
+#    ports:
+#      - "3306:3306"
+#    environment:
+#      MYSQL_ROOT_PASSWORD: root
+#      MYSQL_DATABASE: twitter_toxic_bot_filter
   db:
-    image: mysql:5.7
-    command: --default-authentication-plugin=mysql_native_password
+    image: postgres:11
     ports:
-      - "3306:3306"
+      - "5432:5432"
     environment:
-      MYSQL_ROOT_PASSWORD: root
-      MYSQL_DATABASE: twitter_toxic_bot_filter
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: twitter_toxic_bot_filter

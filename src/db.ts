@@ -5,7 +5,7 @@ const db = {
     connected: false,
     async start() {
         await createConnection({
-            type: 'mysql',
+            type: 'postgres',
             host: config.database.host,
             port: +config.database.port,
             username: config.database.username,

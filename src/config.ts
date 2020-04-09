@@ -8,9 +8,9 @@ export default {
     botometerApiKey: process.env.API_BOTOMETER_API_KEY || '1af995785cmsh7db3b1b3daccbe3p161c6ejsnf9ebf9ad0429',
     database: {
         host: process.env.API_DATABASE_HOST || 'localhost',
-        port: process.env.API_DATABASE_PORT || '3306',
-        username: process.env.API_DATABASE_USERNAME || 'root',
-        password: process.env.API_DATABASE_PASSWORD || 'root',
+        port: process.env.API_DATABASE_PORT || '5432',
+        username: process.env.API_DATABASE_USERNAME || 'postgres',
+        password: process.env.API_DATABASE_PASSWORD || 'postgres',
         database: process.env.API_DATABASE_DATABASE || 'twitter_toxic_bot_filter'
     }
 }
