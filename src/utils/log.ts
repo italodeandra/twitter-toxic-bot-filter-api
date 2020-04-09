@@ -1,4 +1,5 @@
 import { User } from '../api/User/UserEntity'
+import config from '../config'
 
 type Log = {
     type?: 'log' | 'info'
@@ -79,5 +80,9 @@ export function logError(data: Log): void {
 
 export function log(type: 'log' | 'info' | 'error', data: Log): void {
     if (type === 'info') type = 'log'
-    console[type](data)
+    if (config.env === 'development') {
+        console[type](data)
+    } else {
+        console[type](JSON.stringify(data))
+    }
 }
