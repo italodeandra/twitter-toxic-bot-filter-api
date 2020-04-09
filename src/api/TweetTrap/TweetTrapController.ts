@@ -8,7 +8,7 @@ import Joi from '@hapi/joi'
 import Boom from '@hapi/boom'
 import { Socket } from 'socket.io'
 import { SocketOn } from '../../decorators/SocketOn'
-import { logger, prepareLogger } from '../Log/LogEntity'
+import { logError, prepareLog } from '../../utils/log'
 
 @Controller('/tweet-trap', true)
 export default class HealthCheckController {
@@ -90,7 +90,7 @@ export default class HealthCheckController {
                 id
             })
         } catch (e) {
-            if (e.errors[0].code === 144) {
+            if (e.errors?.[0].code === 144) {
                 // delete the tweet from database
                 const tweetTrap = await TweetTrap.findOne({ where: { id } })
                 if (tweetTrap) {
@@ -98,7 +98,14 @@ export default class HealthCheckController {
                 }
                 throw Boom.notFound('Tweet not found')
             } else {
-                logger('error', 'api', 'TweetTrapController.getReplies', e, id, user)
+                logError({
+                    context: 'api',
+                    api: 'TweetTrap',
+                    method: 'TweetTrapController.getReplies',
+                    params: request.params,
+                    user,
+                    error: e
+                })
             }
         }
 
@@ -127,12 +134,22 @@ export default class HealthCheckController {
     async subscribeReplies(socket: Socket, id: string) {
         const user: User = (socket as any).user
 
-        const logger = prepareLogger('info', 'socket', 'subscribeTweetTrapReplies', id, user)
+        const log = prepareLog({
+            type: 'info',
+            context: 'socket',
+            api: 'TweetTrap',
+            method: 'TweetTrapController.subscribeReplies',
+            event: 'subscribeTweetTrapReplies',
+            params: { id },
+            user
+        })
 
-        logger('socket connected')
+        // const logger = prepareLogger('info', 'socket', 'subscribeTweetTrapReplies', id, user)
+
+        log.update({ message: 'socket connected' }).save()
 
         if (!user) {
-            logger('not authenticated')
+            log.update({ message: 'not authenticated' }).save()
             return null
         }
 
@@ -151,7 +168,7 @@ export default class HealthCheckController {
             clearTimeout(timer)
             socket.emit('tweetTrapReplyAutoSync', false)
             if (stream && typeof stream.destroy === 'function') {
-                logger('stream exit')
+                log.update({ message: 'stream exit' }).save()
                 process.nextTick(() => stream.destroy())
             }
             socket.off('unsubscribeTweetTrapReplies', handleExitStream)
@@ -165,11 +182,10 @@ export default class HealthCheckController {
               .on('start', (_response: any) => {
                   wait = 30
                   socket.emit('tweetTrapReplyAutoSync', true)
-                  logger('stream started')
+                  log.update({ message: 'stream started' }).save()
               })
               .on('data', (t: any) => {
                   if (t.in_reply_to_status_id_str === id) {
-                      logger('new reply received')
                       const tweet = {
                           id: t.id_str,
                           text: t.text.replace(new RegExp(`^@${user.screenName} `, 'g'), ''),
@@ -181,18 +197,20 @@ export default class HealthCheckController {
                           },
                           createdAt: new Date(t.created_at)
                       }
-                      logger(tweet)
+                      log.update({ message: 'new reply received', tweet }).save()
                       socket.emit('newTweetTrapReply', tweet)
                   }
               })
-              .on('ping', () => logger('stream ping'))
+              .on('ping', () => log.update({ message: 'stream ping' }).save())
               .on('error', (error: any) => {
-                  logger('not able to stream. trying again in ' + wait + ' seconds')
-                  logger({
-                      source: error.source,
-                      status: error.status,
-                      statusText: error.statusText
-                  })
+                  log.update({
+                      message: 'not able to stream. trying again in ' + wait + ' seconds',
+                      error: {
+                          source: error.source,
+                          status: error.status,
+                          statusText: error.statusText
+                      }
+                  }).save()
                   socket.emit('tweetTrapReplyAutoSync', false)
                   if (wait > 2147483647 / 1000) {
                       handleExitStream()
@@ -201,7 +219,7 @@ export default class HealthCheckController {
                       wait = wait + wait
                   }
               })
-              .on('end', (_response: any) => logger('stream end'))
+              .on('end', (_response: any) => log.update({ message: 'stream end' }).save())
 
             socket.on('unsubscribeTweetTrapReplies', handleExitStream)
             socket.on('disconnect', handleExitStream)

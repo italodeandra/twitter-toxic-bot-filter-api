@@ -8,9 +8,9 @@ import db from './db'
 import Boom from '@hapi/boom'
 import UserService from './api/User/UserService'
 import socket from './socket'
-import { logger } from './api/Log/LogEntity'
 import { User } from './api/User/UserEntity'
 import config from './config'
+import { logError, logInfo } from './utils/log'
 
 const init = async () => {
 
@@ -64,29 +64,37 @@ const init = async () => {
 
         const response: any = request.response as any
 
-        logger(response.statusCode !== 500 ? 'info' : 'error', 'server', 'request', {
-            params: request.params,
-            query: request.query,
-            payload: request.payload,
-            headers: request.headers,
-            response: {
-                statusCode: response.statusCode,
-                data: response.statusCode !== 200 ? response.source : undefined
-            },
-            error: response._error ? {
-                data: response._error.data,
-                stack: response._error.stack,
-                message: response._error.message
-            } : undefined
-        }, request.route.path, user)
+        if (response.statusCode >= 400) {
+            logError({
+                context: 'request',
+                path: request.route.path,
+                params: request.params,
+                query: request.query,
+                payload: request.payload,
+                user,
+                headers: request.headers,
+                response: {
+                    statusCode: response.statusCode,
+                    data: response.statusCode !== 200 ? response.source : undefined
+                },
+                error: response._error ? {
+                    data: response._error.data,
+                    stack: response._error.stack,
+                    message: response._error.message
+                } : undefined
+            })
+        }
     })
 
-    console.log('Server running on %s', server.info.uri)
+    logInfo(`Server running on ${server.info.uri}`)
 }
 
 process.on('unhandledRejection', (err) => {
-    logger('error', 'server', 'unhandledRejection', err)
-    console.error(err)
+    logError({
+        context: 'server',
+        event: 'unhandledRejection',
+        error: err
+    })
     process.exit(1)
 })
 
