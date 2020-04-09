@@ -1,6 +1,6 @@
 export function prepareLog(preparedData: any) {
+    preparedData.type = preparedData.type || 'info'
     let data = { ...preparedData }
-    data.type = data.type || 'info'
 
     const methods = {
         update(updatedData: any) {
