@@ -27,7 +27,7 @@ export default class UserController {
         } = await client.getRequestToken(config.webUrl)
 
         if (!oauthToken || !oauthTokenSecret) {
-            throw Boom.internal()
+            throw Boom.internal('No oauthToken or no oauthTokenSecret')
         }
 
         return { oauthToken, oauthTokenSecret }
