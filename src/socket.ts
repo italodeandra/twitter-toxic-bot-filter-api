@@ -9,12 +9,6 @@ const socketToExport: any = {
         const io = SocketIO(server.listener)
 
         io.on('connection', function (socket) {
-            // console.log('a user connected')
-
-            // socket.on('disconnect', function () {
-            //     console.log('user disconnected')
-            // })
-
             socket.on('auth', async (userData: User) => {
                 if (userData) {
                     (socket as any).user = await new UserService().getInfoFromTwitterAndSave(userData.accessToken, userData.accessTokenSecret)
