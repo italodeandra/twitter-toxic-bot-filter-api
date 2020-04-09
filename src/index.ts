@@ -22,13 +22,18 @@ const init = async () => {
             validate: {
                 failAction: async (request, h, err) => {
                     if (err) {
+                        logError({
+                            context: 'server',
+                            message: 'ValidationError',
+                            error: err,
+                            path: request.route.path,
+                            params: request.params,
+                            query: request.query,
+                            payload: request.payload,
+                        })
                         if (process.env.NODE_ENV === 'production') {
-                            // In prod, log a limited error message and throw the default Bad Request error.
-                            console.error('ValidationError:', err.message)
                             throw Boom.badRequest(`Invalid request payload input`)
                         } else {
-                            // During development, log and respond with the full error.
-                            console.error(err)
                             throw err
                         }
                     }
@@ -64,7 +69,7 @@ const init = async () => {
 
         const response: any = request.response as any
 
-        if (response.statusCode >= 400) {
+        if (response.statusCode >= 400 && !response._error.data?.noLog) {
             logError({
                 context: 'request',
                 path: request.route.path,
@@ -86,7 +91,7 @@ const init = async () => {
         }
     })
 
-    logInfo(`Server running on ${server.info.uri}`)
+    logInfo({ message: `Server running on ${server.info.uri}` })
 }
 
 process.on('unhandledRejection', (err) => {
