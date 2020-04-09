@@ -38,8 +38,12 @@ export default class HealthCheckController {
             })
             tweetTrapData.id = result.id_str
             tweetTrapData.createdBy = user
-        } catch (e) {
-            console.error(e)
+        } catch (error) {
+            if (error.errors?.[0].code === 187) { // duplicated tweet
+                throw Boom.conflict('Tweet duplicated. You can\'t tweet the same thing more than once.', { noLog: true })
+            } else {
+                throw Boom.internal('It was not possible to tweet', error)
+            }
         }
 
         let tweetTrap = await TweetTrap.create(tweetTrapData)
