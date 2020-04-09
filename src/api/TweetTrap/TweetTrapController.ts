@@ -9,6 +9,7 @@ import Boom from '@hapi/boom'
 import { Socket } from 'socket.io'
 import { SocketOn } from '../../decorators/SocketOn'
 import { logError, prepareLog } from '../../utils/log'
+import isBigInt from '../../utils/isBigInt'
 
 @Controller('/tweet-trap', true)
 export default class HealthCheckController {
@@ -47,7 +48,14 @@ export default class HealthCheckController {
         return tweetTrap
     }
 
-    @Get('/{id}')
+    @Get({
+        path: '/{id}',
+        validate: {
+            params: Joi.object({
+                id: Joi.string().alphanum().custom(isBigInt, 'bigint').required()
+            })
+        }
+    })
     async get(request: Request): Promise<TweetTrap> {
         const id = request.params.id
 
@@ -72,7 +80,14 @@ export default class HealthCheckController {
         })
     }
 
-    @Get('/{id}/replies')
+    @Get({
+        path: '/{id}/replies',
+        validate: {
+            params: Joi.object({
+                id: Joi.string().alphanum().custom(isBigInt, 'bigint').required()
+            })
+        }
+    })
     async getReplies(request: Request) {
         const id = request.params.id
         const user = request.auth.credentials as User
