@@ -73,7 +73,7 @@ export function logInfo(data: Log): void {
 }
 
 export function logError(data: Log): void {
-    const error = new Error();
+    const error = new Error(JSON.stringify(data));
     (data as any).trace = error.stack
     log('error', data)
 }
