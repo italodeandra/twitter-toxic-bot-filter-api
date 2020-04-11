@@ -8,6 +8,7 @@ require('./HealthCheck/HealthCheckController')
 require('./TweetTrap/TweetTrapController')
 require('./BotScore/BotScoreController')
 require('./Mute/MuteController')
+require('./NotFound/NotFoundController')
 
 export default {
     addRoutes(server: Server) {
