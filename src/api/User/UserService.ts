@@ -1,7 +1,8 @@
 import Twitter from 'twitter-lite'
 import config from '../../config'
 import { User } from './UserEntity'
-import { logError } from '../../utils/log'
+import { AuthCredentials } from '@hapi/hapi'
+import handleTwitterError from '../../utils/handleTwitterError'
 
 export default class UserService {
 
@@ -29,14 +30,7 @@ export default class UserService {
             name = response.name
             profileImageUrl = response.profile_image_url_https.replace('normal.', '200x200.')
         } catch (error) {
-            logError({
-                context: 'api',
-                api: 'User',
-                method: 'UserService.getInfoFromTwitterAndSave',
-                error,
-                message: 'Error trying to verify credentials form Twitter'
-            })
-            throw Boom.unauthorized('Twitter token expired', 'Bearer')
+            throw handleTwitterError(error)
         }
 
         let user = await User.create({

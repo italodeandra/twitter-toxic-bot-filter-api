@@ -8,8 +8,11 @@ import Joi from '@hapi/joi'
 import Boom from '@hapi/boom'
 import { Socket } from 'socket.io'
 import { SocketOn } from '../../decorators/SocketOn'
-import { logError, prepareLog } from '../../utils/log'
+import { prepareLog } from '../../utils/log'
 import isBigInt from '../../utils/isBigInt'
+import Autowired from '../../decorators/Autowired'
+import UserService from '../User/UserService'
+import handleTwitterError from '../../utils/handleTwitterError'
 
 @Controller('/tweet-trap', true)
 export default class TweetTrapController {
@@ -102,35 +105,17 @@ export default class TweetTrapController {
             access_token_secret: user.accessTokenSecret
         })
 
-        try {
-            // check if tweet still exists
-            await client.get('statuses/show', {
-                id
-            })
-        } catch (e) {
-            if (e.errors?.[0].code === 144) { // tweet not found
-                const tweetTrap = await TweetTrap.findOne({ where: { id } })
-                if (tweetTrap) {
-                    await tweetTrap.remove()
-                }
-                throw Boom.notFound('Tweet not found', { noLog: true })
-            } else {
-                logError({
-                    context: 'api',
-                    api: 'TweetTrap',
-                    method: 'TweetTrapController.getReplies',
-                    params: request.params,
-                    user,
-                    error: e
-                })
-            }
-        }
+        let statuses: any[] = []
 
-        let statuses = await client.get('statuses/mentions_timeline', {
-            // q: 'to:' + user.screenName,
-            since_id: id,
-            count: 800
-        })
+        try {
+            statuses = await client.get('statuses/mentions_timeline', {
+                // q: 'to:' + user.screenName,
+                since_id: id,
+                count: 800
+            })
+        } catch (error) {
+            throw handleTwitterError(error)
+        }
 
         return statuses
           .filter((t: any) => t.in_reply_to_status_id_str = id)

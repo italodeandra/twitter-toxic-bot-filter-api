@@ -3,8 +3,9 @@ import Joi from '@hapi/joi'
 import { Request } from '@hapi/hapi'
 import Twitter from 'twitter-lite'
 import config from '../../config'
-import { User } from '../User/UserEntity'
-import Boom from '@hapi/boom'
+import Autowired from '../../decorators/Autowired'
+import UserService from '../User/UserService'
+import handleTwitterError from '../../utils/handleTwitterError'
 
 @Controller('/mute')
 export default class MuteController {
@@ -36,8 +37,11 @@ export default class MuteController {
                 await client.post('mutes/users/create', {
                     screen_name: name
                 })
-            } catch (e) {
-                Boom.internal('It was not possible to mute all users', e)
+            } catch (error) {
+                const handledError = handleTwitterError(error)
+                if (handledError !== error) {
+                    throw handledError
+                }
             }
         }
 
