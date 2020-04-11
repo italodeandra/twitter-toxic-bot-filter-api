@@ -10,4 +10,9 @@ export default class HealthCheckController {
         }
     }
 
+    @Get('loaderio-2bd379dd68798a73786d0556e52ba92d')
+    loadTest() {
+        return 'loaderio-2bd379dd68798a73786d0556e52ba92d'
+    }
+
 }
