@@ -12,7 +12,7 @@ export function Controller(path: string, auth?: boolean) {
                 if (auth) {
                     route.options = {
                         ...route.options,
-                        auth: 'twitter-basic',
+                        auth: 'jwt',
                     } as RouteOptions
                 }
             }
@@ -27,16 +27,15 @@ interface Options {
     auth?: boolean
 }
 
-function Method(method: string, path?: string, options?: Options) {
+function Method(method: string, path?: string, options?: Options, auth?: boolean) {
     let routeOptions: RouteOptions = {}
 
     if (options) {
         path = options.path
         routeOptions.validate = options?.validate
-
-        if (options.auth) {
-            routeOptions.auth = 'twitter-basic'
-        }
+    }
+    if ((options && options.auth) || auth) {
+        routeOptions.auth = 'jwt'
     }
 
     return function (target: any, propertyKey: string) {
@@ -49,13 +48,13 @@ function Method(method: string, path?: string, options?: Options) {
     }
 }
 
-export function Get(path?: string): any
+export function Get(path?: string, auth?: boolean): any
 export function Get(options?: Options): any
-export function Get(x: any) {
+export function Get(x: any, auth?: boolean) {
     if (typeof x === 'string') {
-        return Method('GET', x)
+        return Method('GET', x, undefined, auth)
     } else {
-        return Method('GET', undefined, x)
+        return Method('GET', undefined, x, auth)
     }
 }
 

@@ -2,15 +2,14 @@
 
 import 'reflect-metadata'
 import * as Hapi from '@hapi/hapi'
-import { Request } from '@hapi/hapi'
 import api from './api/api'
 import db from './db'
 import Boom from '@hapi/boom'
-import UserService from './api/User/UserService'
 import socket from './socket'
 import { User } from './api/User/UserEntity'
 import config from './config'
 import { logError, logInfo } from './utils/log'
+import UserService from './api/User/UserService'
 
 const init = async () => {
 
@@ -42,19 +41,16 @@ const init = async () => {
         }
     })
 
-    await server.register(require('./plugins/authentication/authentication'))
-
-    server.auth.strategy('twitter-basic', 'twitter-basic', {
-        async validate(request: Request, accessToken: string, accessTokenSecret: string) {
-            let isValid = true
-
-            const userService = new UserService()
-
-            let user = await userService.getInfoFromTwitterAndSave(accessToken, accessTokenSecret)
-
-            return { isValid, credentials: user }
-        }
-    })
+    await server.register(require('hapi-auth-jwt2'))
+    server.auth.strategy('jwt', 'jwt',
+      {
+          key: config.authSecret,
+          async validate(decoded: User) {
+              const userFound = await User.count({ where: { id: decoded.id } })
+              return { isValid: !!userFound }
+          }
+      }
+    )
 
     api.addRoutes(server)
 
@@ -64,8 +60,12 @@ const init = async () => {
 
     await db.start()
 
-    server.events.on('response', (request) => {
-        const user = request.auth.credentials as User
+    server.events.on('response', async (request) => {
+        const userService = new UserService()
+        let user: User | undefined
+        if (request.auth.isAuthenticated) {
+            user = await userService.getByCredentials(request.auth.credentials)
+        }
 
         const response: any = request.response as any
 

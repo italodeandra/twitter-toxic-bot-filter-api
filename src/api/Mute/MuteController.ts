@@ -9,6 +9,9 @@ import Boom from '@hapi/boom'
 @Controller('/mute')
 export default class MuteController {
 
+    @Autowired
+    userService!: UserService
+
     @Post({
         validate: {
             payload: Joi.object({
@@ -19,7 +22,7 @@ export default class MuteController {
     })
     async mute(request: Request): Promise<{ message: string }> {
         const { names }: { names: string[] } = request.payload as any
-        const user = request.auth.credentials as User
+        const user = await this.userService.getByCredentials(request.auth.credentials)
 
         const client = new Twitter({
             consumer_key: config.twitterConsumerApiKey,

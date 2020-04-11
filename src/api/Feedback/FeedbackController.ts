@@ -2,10 +2,14 @@ import { Controller, Post } from '../../decorators/Controller'
 import { Request } from '@hapi/hapi'
 import Joi from '@hapi/joi'
 import { Feedback } from './FeedbackEntity'
-import { User } from '../User/UserEntity'
+import Autowired from '../../decorators/Autowired'
+import UserService from '../User/UserService'
 
 @Controller('/feedback', true)
 export default class FeedbackController {
+
+    @Autowired
+    userService!: UserService
 
     @Post({
         validate: {
@@ -16,8 +20,8 @@ export default class FeedbackController {
         }
     })
     async save(request: Request) {
-        let payload = request.payload as Feedback
-        let user = request.auth.credentials as User
+        const payload = request.payload as Feedback
+        const user = await this.userService.getByCredentials(request.auth.credentials)
 
         const feedback = await Feedback.create(payload)
         feedback.createdBy = user!

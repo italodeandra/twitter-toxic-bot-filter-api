@@ -12,7 +12,10 @@ import { logError, prepareLog } from '../../utils/log'
 import isBigInt from '../../utils/isBigInt'
 
 @Controller('/tweet-trap', true)
-export default class HealthCheckController {
+export default class TweetTrapController {
+
+    @Autowired
+    userService!: UserService
 
     @Post({
         validate: {
@@ -22,8 +25,8 @@ export default class HealthCheckController {
         }
     })
     async tweet(request: Request): Promise<TweetTrap> {
-        let tweetTrapData = request.payload as TweetTrap
-        const user = request.auth.credentials as User
+        const tweetTrapData = request.payload as TweetTrap
+        const user = await this.userService.getByCredentials(request.auth.credentials)
 
         const client = new Twitter({
             consumer_key: config.twitterConsumerApiKey,
@@ -39,11 +42,7 @@ export default class HealthCheckController {
             tweetTrapData.id = result.id_str
             tweetTrapData.createdBy = user
         } catch (error) {
-            if (error.errors?.[0].code === 187) { // duplicated tweet
-                throw Boom.conflict('Tweet duplicated. You can\'t tweet the same thing more than once.', { noLog: true })
-            } else {
-                throw Boom.internal('It was not possible to tweet', error)
-            }
+            throw handleTwitterError(error)
         }
 
         let tweetTrap = await TweetTrap.create(tweetTrapData)
@@ -74,7 +73,7 @@ export default class HealthCheckController {
 
     @Get()
     async list(request: Request): Promise<TweetTrap[]> {
-        const user = request.auth.credentials as User
+        const user = await this.userService.getByCredentials(request.auth.credentials)
 
         return TweetTrap.find({
             relations: [ 'createdBy' ],
@@ -94,7 +93,7 @@ export default class HealthCheckController {
     })
     async getReplies(request: Request) {
         const id = request.params.id
-        const user = request.auth.credentials as User
+        const user = await this.userService.getByCredentials(request.auth.credentials)
 
         const client = new Twitter({
             consumer_key: config.twitterConsumerApiKey,

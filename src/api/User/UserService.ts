@@ -1,10 +1,17 @@
 import Twitter from 'twitter-lite'
 import config from '../../config'
-import Boom from '@hapi/boom'
 import { User } from './UserEntity'
 import { logError } from '../../utils/log'
 
 export default class UserService {
+
+    async getById(id: string): Promise<User | undefined> {
+        return User.findOne({ where: { id } })
+    }
+
+    async getByCredentials(credentials: AuthCredentials): Promise<User> {
+        return (await this.getById((credentials as any).id))!
+    }
 
     async getInfoFromTwitterAndSave(accessToken: string, accessTokenSecret: string): Promise<User> {
         const client = new Twitter({

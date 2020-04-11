@@ -29,7 +29,7 @@ type Log = {
     method: string
     event: string
     params: { [key: string]: any }
-    user: User,
+    user?: User,
     message?: string
     error?: any
     [key: string]: any
@@ -40,7 +40,7 @@ type Log = {
     params: any,
     query: any,
     payload: any,
-    user: User,
+    user?: User,
     headers: { [key: string]: any },
     response: { [key: string]: any },
     error?: any

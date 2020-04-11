@@ -1,4 +1,4 @@
-import { Controller, Post } from '../../decorators/Controller'
+import { Controller, Get, Post } from '../../decorators/Controller'
 import { Request } from '@hapi/hapi'
 import Joi from '@hapi/joi'
 import { User } from './UserEntity'
@@ -7,6 +7,7 @@ import config from '../../config'
 import Boom from '@hapi/boom'
 import UserService from './UserService'
 import Autowired from '../../decorators/Autowired'
+import jwt from 'jsonwebtoken'
 
 @Controller('/user')
 export default class UserController {
@@ -15,22 +16,36 @@ export default class UserController {
     userService!: UserService
 
     @Post('/auth-start')
-    async authStart(): Promise<{ oauthToken: string, oauthTokenSecret: string }> {
+    async authStart(): Promise<{
+        oauthToken: string,
+        oauthTokenSecret: string,
+        twitterAuth: string | undefined
+    }> {
         const client = new Twitter({
             consumer_key: config.twitterConsumerApiKey,
             consumer_secret: config.twitterConsumerApiSecretKey
         })
+        let callbackUrl = config.webUrl
+        let twitterAuth: string | undefined
 
-        const {
-            oauth_token: oauthToken,
-            oauth_token_secret: oauthTokenSecret
-        } = await client.getRequestToken(config.webUrl)
-
-        if (!oauthToken || !oauthTokenSecret) {
-            throw Boom.internal('No oauthToken or no oauthTokenSecret')
+        if (config.env === 'test') {
+            callbackUrl = `http://${config.apiHost}:${config.port}/user/auth-callback`
         }
 
-        return { oauthToken, oauthTokenSecret }
+        try {
+            const {
+                oauth_token: oauthToken,
+                oauth_token_secret: oauthTokenSecret
+            } = await client.getRequestToken(callbackUrl)
+
+            if (config.env === 'test') {
+                twitterAuth = config.twitterAuthenticateUrl(oauthToken)
+            }
+
+            return { oauthToken, oauthTokenSecret, twitterAuth }
+        } catch (error) {
+            throw Boom.internal(error.message, error)
+        }
     }
 
     @Post({
@@ -43,7 +58,10 @@ export default class UserController {
             }).options({ stripUnknown: true })
         }
     })
-    async authFinish(request: Request): Promise<User> {
+    async authFinish(request: Request): Promise<{
+        user: User
+        token: string
+    }> {
         const { oauthToken, oauthTokenSecret, oauthVerifier } = request.payload as any
 
         const app = new Twitter({
@@ -51,16 +69,56 @@ export default class UserController {
             consumer_secret: config.twitterConsumerApiSecretKey
         })
 
-        const {
-            oauth_token: accessToken,
-            oauth_token_secret: accessTokenSecret
-        } = await app.getAccessToken({
+        let accessToken, accessTokenSecret
+
+        const res = await app.getAccessToken({
             key: oauthToken,
             secret: oauthTokenSecret,
             verifier: oauthVerifier
         })
+        accessToken = res.oauth_token
+        accessTokenSecret = res.oauth_token_secret
 
-        return await this.userService.getInfoFromTwitterAndSave(accessToken, accessTokenSecret)
+        const user = await this.userService.getInfoFromTwitterAndSave(accessToken, accessTokenSecret)
+        const token = jwt.sign({ id: user.id }, config.authSecret)
+
+        return { user, token }
+    }
+
+    @Get('/auth-verify', true)
+    async authVerify(request: Request): Promise<{
+        user: User
+        token: string
+    }> {
+        const { accessToken, accessTokenSecret } = await this.userService.getByCredentials(request.auth.credentials)
+
+        const user = await this.userService.getInfoFromTwitterAndSave(accessToken, accessTokenSecret)
+        const token = jwt.sign({ id: user.id }, config.authSecret)
+
+        return { user, token }
+    }
+
+    @Get({
+        path: '/auth-callback',
+        validate: {
+            query: Joi.object({
+                oauth_token: Joi.string().required(),
+                oauth_verifier: Joi.string().required()
+            }).options({ stripUnknown: true })
+        }
+    }) // testing purposes
+    authCallback(request: Request): {
+        oauthToken: string,
+        oauthTokenSecret: string,
+        oauthVerifier: string
+    } {
+        const { oauth_token, oauth_verifier } = request.query as any
+
+        return {
+            oauthToken: oauth_token,
+            oauthTokenSecret: '{{oauthTokenSecret}}',
+            oauthVerifier: oauth_verifier
+        }
     }
 
 }
