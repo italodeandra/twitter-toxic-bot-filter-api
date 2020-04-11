@@ -23,7 +23,7 @@
     "pg": "^8.0.0",
     "reflect-metadata": "^0.1.13",
     "socket.io": "^2.3.0",
-    "twitter-lite": "^0.9.4",
+    "twitter-lite": "https://github.com/italodeandra/twitter-lite/tarball/npm",
     "typeorm": "^0.2.24"
   },
   "devDependencies": {
