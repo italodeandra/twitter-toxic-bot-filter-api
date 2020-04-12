@@ -69,7 +69,7 @@ const init = async () => {
 
         const response: any = request.response as any
 
-        if (response.statusCode >= 400) {
+        if (response.statusCode >= 400 && !response._error.data?.noLog && response.statusCode !== 401) {
             logError({
                 context: 'request',
                 path: request.route.path,
