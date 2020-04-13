@@ -2,16 +2,16 @@ import { User } from '../api/User/UserEntity'
 import config from '../config'
 
 type Log = {
-    type?: 'log' | 'info'
+    type?: 'info'
     message: string
 } | {
-    type?: 'log' | 'info' | 'error'
+    type?: 'info' | 'error'
     context: 'server'
     message?: string
     error?: any
     [key: string]: any
 } | {
-    type?: 'log' | 'info' | 'error'
+    type?: 'info' | 'error'
     context: 'api'
     api: string
     method: string
@@ -23,7 +23,7 @@ type Log = {
     error?: any
     [key: string]: any
 } | {
-    type?: 'log' | 'info' | 'error'
+    type?: 'info' | 'error'
     context: 'socket'
     api: string
     method: string
@@ -34,7 +34,7 @@ type Log = {
     error?: any
     [key: string]: any
 } | {
-    type?: 'log' | 'info' | 'error'
+    type?: 'info' | 'error'
     context: 'request',
     path: string
     params: any,
@@ -56,10 +56,6 @@ export function prepareLog(preparedData: Log) {
             data = { ...preparedData, ...updatedData }
             return methods
         },
-        // set(setData: { [key: string]: any }) {
-        //     data = { ...data, ...setData }
-        //     return methods
-        // },
         save() {
             log(data.type!, data)
         }
@@ -78,11 +74,12 @@ export function logError(data: Log): void {
     log('error', data)
 }
 
-export function log(type: 'log' | 'info' | 'error', data: Log): void {
-    if (type === 'info') type = 'log'
+export function log(type: 'info' | 'error', data: Log): void {
+    let consoleType: 'log' | 'info' | 'error' = type
+    if (type === 'info') consoleType = 'log'
     if (config.env === 'development') {
-        console[type](data)
+        console[consoleType](data)
     } else {
-        console[type](JSON.stringify(data))
+        console[consoleType](JSON.stringify(data))
     }
 }
