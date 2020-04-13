@@ -5,12 +5,8 @@ const db = {
     connected: false,
     async start() {
         await createConnection({
+            url: config.databaseUrl,
             type: 'postgres',
-            host: config.database.host,
-            port: +config.database.port,
-            username: config.database.username,
-            password: config.database.password,
-            database: config.database.database,
             entities: [
                 __dirname + '/api/**/*Entity.*'
             ],
