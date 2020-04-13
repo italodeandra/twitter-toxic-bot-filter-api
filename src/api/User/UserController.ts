@@ -4,10 +4,10 @@ import Joi from '@hapi/joi'
 import { User } from './UserEntity'
 import Twitter from 'twitter-lite'
 import config from '../../config'
-import Boom from '@hapi/boom'
 import UserService from './UserService'
 import Autowired from '../../decorators/Autowired'
 import jwt from 'jsonwebtoken'
+import handleTwitterError from '../../utils/handleTwitterError'
 
 @Controller('/user')
 export default class UserController {
@@ -44,7 +44,7 @@ export default class UserController {
 
             return { oauthToken, oauthTokenSecret, twitterAuth }
         } catch (error) {
-            throw Boom.internal(error.message, error)
+            throw handleTwitterError(error)
         }
     }
 
