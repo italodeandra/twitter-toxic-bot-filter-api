@@ -1,6 +1,6 @@
 {
   "name": "twitter-toxic-bot-filter-api",
-  "version": "1.0.0",
+  "version": "1.0.1-13",
   "description": "",
   "main": "src/index.ts",
   "scripts": {
