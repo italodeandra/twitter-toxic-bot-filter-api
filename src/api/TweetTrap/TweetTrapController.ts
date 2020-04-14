@@ -8,17 +8,21 @@ import Joi from '@hapi/joi'
 import Boom from '@hapi/boom'
 import { Socket } from 'socket.io'
 import { SocketOn } from '../../decorators/SocketOn'
-import { prepareLog } from '../../utils/log'
 import isBigInt from '../../utils/isBigInt'
 import Autowired from '../../decorators/Autowired'
 import UserService from '../User/UserService'
 import handleTwitterError from '../../utils/handleTwitterError'
+import TwitterStreamService from '../TwitterStream/TwitterStreamService'
+import { prepareLog } from '../../utils/log'
 
 @Controller('/tweet-trap', true)
 export default class TweetTrapController {
 
     @Autowired
     userService!: UserService
+
+    @Autowired
+    twitterStream!: TwitterStreamService
 
     @Post({
         validate: {
@@ -137,7 +141,6 @@ export default class TweetTrapController {
         const user: User = (socket as any).user
 
         const log = prepareLog({
-            type: 'info',
             context: 'socket',
             api: 'TweetTrap',
             method: 'TweetTrapController.subscribeReplies',
@@ -146,87 +149,86 @@ export default class TweetTrapController {
             user
         })
 
-        // log.update({ message: 'socket connected' }).save()
+        socket.emit('tweetTrapReplyAutoSync', true)
 
-        if (!user) {
-            // log.update({ message: 'not authenticated' }).save()
-            return null
+        function handleStart() {
+            socket.emit('tweetTrapReplyAutoSync', true)
+            log.update({ type: 'info', message: 'stream started' }).save()
         }
 
-        const client = new Twitter({
-            consumer_key: config.twitterConsumerApiKey,
-            consumer_secret: config.twitterConsumerApiSecretKey,
-            access_token_key: user.accessToken,
-            access_token_secret: user.accessTokenSecret
-        })
-
-        let wait = 30
-        let stream: any
-        let timer: any
-
-        function handleExitStream() {
-            clearTimeout(timer)
-            socket.emit('tweetTrapReplyAutoSync', false)
-            if (stream && typeof stream.destroy === 'function') {
-                // log.update({ message: 'stream exit' }).save()
-                process.nextTick(() => stream.destroy())
+        function handleData(t: any) {
+            log.update({ type: 'info', message: 'stream new data' }).save()
+            if (t.in_reply_to_status_id_str === id) {
+                const tweet = {
+                    id: t.id_str,
+                    text: t.text.replace(new RegExp(`^@${user.screenName} `, 'g'), ''),
+                    createdBy: {
+                        id: t.user.id_str,
+                        screenName: t.user.screen_name,
+                        name: t.user.name,
+                        profileImageUrl: t.user.profile_image_url_https.replace('normal.', '200x200.')
+                    },
+                    createdAt: new Date(t.created_at)
+                }
+                log.update({ type: 'info', message: 'stream new reply received', tweet }).save()
+                socket.emit('newTweetTrapReply', tweet)
             }
-            socket.off('unsubscribeTweetTrapReplies', handleExitStream)
-            socket.off('disconnect', handleExitStream)
         }
 
-        function subscribeStream() {
-            stream = client.stream('statuses/filter', {
+        function handlePing() {
+            socket.emit('tweetTrapReplyAutoSync', true)
+            log.update({ type: 'info', message: 'stream ping' }).save()
+        }
+
+        function handleError(error: any) {
+            log.update({
+                type: 'error',
+                message: 'stream error',
+                error: {
+                    source: error.source,
+                    status: error.status,
+                    statusText: error.statusText
+                }
+            }).save()
+        }
+
+        function handleEnd() {
+            log.update({ type: 'info', message: 'stream end' }).save()
+            socket.emit('tweetTrapReplyAutoSync', false)
+        }
+
+        try {
+            const stream = this.twitterStream
+              .register(user, 'statuses/filter', {
                   track: '@' + user.screenName,
               })
-              .on('start', (_response: any) => {
-                  wait = 30
-                  socket.emit('tweetTrapReplyAutoSync', true)
-                  // log.update({ message: 'stream started' }).save()
-              })
-              .on('data', (t: any) => {
-                  if (t.in_reply_to_status_id_str === id) {
-                      const tweet = {
-                          id: t.id_str,
-                          text: t.text.replace(new RegExp(`^@${user.screenName} `, 'g'), ''),
-                          createdBy: {
-                              id: t.user.id_str,
-                              screenName: t.user.screen_name,
-                              name: t.user.name,
-                              profileImageUrl: t.user.profile_image_url_https.replace('normal.', '200x200.')
-                          },
-                          createdAt: new Date(t.created_at)
-                      }
-                      // log.update({ message: 'new reply received', tweet }).save()
-                      socket.emit('newTweetTrapReply', tweet)
-                  }
-              })
-              // .on('ping', () => log.update({ message: 'stream ping' }).save())
-              .on('error', (error: any) => {
-                  log.update({
-                      type: 'error',
-                      message: 'not able to stream. trying again in ' + wait + ' seconds',
-                      error: {
-                          source: error.source,
-                          status: error.status,
-                          statusText: error.statusText
-                      }
-                  }).save()
-                  socket.emit('tweetTrapReplyAutoSync', false)
-                  if (wait > 2147483647 / 1000) {
-                      handleExitStream()
-                  } else {
-                      timer = setTimeout(subscribeStream, wait * 1000)
-                      wait = wait + wait
-                  }
-              })
-            // .on('end', (_response: any) => log.update({ message: 'stream end' }).save())
+              .on('start', handleStart)
+              .on('data', handleData)
+              .on('ping', handlePing)
+              .on('error', handleError)
+              .on('end', handleEnd)
 
-            socket.on('unsubscribeTweetTrapReplies', handleExitStream)
-            socket.on('disconnect', handleExitStream)
+            const removeListeners = () => {
+                stream
+                  .off('start', handleStart)
+                  .off('data', handleData)
+                  .off('ping', handlePing)
+                  .off('error', handleError)
+                  .off('end', handleEnd)
+                socket.off('unsubscribeTweetTrapReplies', removeListeners)
+                socket.off('disconnect', removeListeners)
+                log.update({ type: 'info', message: 'stream terminated by the user' }).save()
+            }
+
+            socket.on('disconnect', removeListeners)
+            socket.on('unsubscribeTweetTrapReplies', removeListeners)
+        } catch (error) {
+            log.update({
+                type: 'error',
+                message: 'not able to stream',
+                error
+            }).save()
         }
-
-        subscribeStream()
     }
 
 }
