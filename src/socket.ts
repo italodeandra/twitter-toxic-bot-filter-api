@@ -1,11 +1,11 @@
-import SocketIO from 'socket.io'
+import SocketIO, { Socket } from 'socket.io'
 import { Server } from '@hapi/hapi'
 import { User } from './api/User/UserEntity'
 import jwt from 'jsonwebtoken'
 import config from './config'
 
-const socketToExport: any = {
-    events: [],
+const socketToExport = {
+    events: [] as { name: string, handler: (socket: Socket) => void, auth: boolean }[],
     async start(server: Server) {
         const io = SocketIO(server.listener)
 
@@ -15,7 +15,6 @@ const socketToExport: any = {
                     try {
                         const decoded: any = jwt.verify((userData as any).token, config.authSecret);
                         (socket as any).user = await User.findOne({ where: { id: decoded.id } })
-                        // (socket as any).user = await new UserService().getInfoFromTwitterAndSave(userData.accessToken, userData.accessTokenSecret)
                     } catch (error) {
                         (socket as any).user = null
                     }
