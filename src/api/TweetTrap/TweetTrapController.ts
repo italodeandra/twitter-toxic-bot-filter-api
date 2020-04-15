@@ -13,7 +13,7 @@ import Autowired from '../../decorators/Autowired'
 import UserService from '../User/UserService'
 import handleTwitterError from '../../utils/handleTwitterError'
 import TwitterStreamService from '../TwitterStream/TwitterStreamService'
-import { prepareLog } from '../../utils/log'
+import log from '../../utils/log'
 
 @Controller('/tweet-trap', true)
 export default class TweetTrapController {
@@ -140,24 +140,24 @@ export default class TweetTrapController {
     async subscribeReplies(socket: Socket, id: string) {
         const user: User = (socket as any).user
 
-        const log = prepareLog({
+        const prepareLog = {
             context: 'socket',
             api: 'TweetTrap',
             method: 'TweetTrapController.subscribeReplies',
             event: 'subscribeTweetTrapReplies',
             params: { id },
             user
-        })
+        }
 
         socket.emit('tweetTrapReplyAutoSync', true)
 
         function handleStart() {
             socket.emit('tweetTrapReplyAutoSync', true)
-            log.update({ type: 'info', message: 'stream started' }).save()
+            log({ ...prepareLog, level: 'info', message: 'stream started' })
         }
 
         function handleData(t: any) {
-            log.update({ type: 'info', message: 'stream new data' }).save()
+            log({ ...prepareLog, level: 'info', message: 'stream new data' })
             if (t.in_reply_to_status_id_str === id) {
                 const tweet = {
                     id: t.id_str,
@@ -170,30 +170,31 @@ export default class TweetTrapController {
                     },
                     createdAt: new Date(t.created_at)
                 }
-                log.update({ type: 'info', message: 'stream new reply received', tweet }).save()
+                log({ ...prepareLog, level: 'info', message: 'stream new reply received', tweet })
                 socket.emit('newTweetTrapReply', tweet)
             }
         }
 
         function handlePing() {
             socket.emit('tweetTrapReplyAutoSync', true)
-            log.update({ type: 'info', message: 'stream ping' }).save()
+            log({ ...prepareLog, level: 'info', message: 'stream ping' })
         }
 
         function handleError(error: any) {
-            log.update({
-                type: 'error',
+            log({
+                ...prepareLog,
+                level: 'error',
                 message: 'stream error',
                 error: {
                     source: error.source,
                     status: error.status,
                     statusText: error.statusText
                 }
-            }).save()
+            })
         }
 
         function handleEnd() {
-            log.update({ type: 'info', message: 'stream end' }).save()
+            log({ ...prepareLog, level: 'info', message: 'stream end' })
             socket.emit('tweetTrapReplyAutoSync', false)
         }
 
@@ -217,17 +218,18 @@ export default class TweetTrapController {
                   .off('end', handleEnd)
                 socket.off('unsubscribeTweetTrapReplies', removeListeners)
                 socket.off('disconnect', removeListeners)
-                log.update({ type: 'info', message: 'stream terminated by the user' }).save()
+                log({ ...prepareLog, level: 'info', message: 'stream terminated by the user' })
             }
 
             socket.on('disconnect', removeListeners)
             socket.on('unsubscribeTweetTrapReplies', removeListeners)
         } catch (error) {
-            log.update({
-                type: 'error',
+            log({
+                ...prepareLog,
+                level: 'error',
                 message: 'not able to stream',
                 error
-            }).save()
+            })
         }
     }
 
