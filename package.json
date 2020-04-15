@@ -27,7 +27,8 @@
     "reflect-metadata": "^0.1.13",
     "socket.io": "^2.3.0",
     "twitter-lite": "https://github.com/italodeandra/twitter-lite/tarball/npm",
-    "typeorm": "^0.2.24"
+    "typeorm": "^0.2.24",
+    "winston": "^3.2.1"
   },
   "devDependencies": {
     "@types/hapi__hapi": "^19.0.2",

@@ -8,7 +8,7 @@ import Boom from '@hapi/boom'
 import socket from './socket'
 import { User } from './api/User/UserEntity'
 import config from './config'
-import { logError, logInfo } from './utils/log'
+import log from './utils/log'
 import UserService from './api/User/UserService'
 
 const init = async () => {
@@ -21,16 +21,18 @@ const init = async () => {
             validate: {
                 failAction: async (request, h, err) => {
                     if (err) {
-                        logError({
+                        log({
+                            level: 'error',
+                            message: 'Validation error',
+
                             context: 'server',
-                            message: 'ValidationError',
                             error: err,
                             path: request.route.path,
                             params: request.params,
                             query: request.query,
                             payload: request.payload,
                         })
-                        if (process.env.NODE_ENV === 'production') {
+                        if (config.env === 'production') {
                             throw Boom.badRequest(`Invalid request payload input`)
                         } else {
                             throw err
@@ -70,7 +72,10 @@ const init = async () => {
         const response: any = request.response as any
 
         if (response.statusCode >= 400 && !response._error.data?.noLog && response.statusCode !== 401) {
-            logError({
+            log({
+                level: 'error',
+                message: 'Request error',
+
                 context: 'request',
                 path: request.route.path,
                 params: request.params,
@@ -91,11 +96,14 @@ const init = async () => {
         }
     })
 
-    logInfo({ message: `Server running on ${server.info.uri}` })
+    log({ level: 'info', message: `Server running on ${server.info.uri}` })
 }
 
 process.on('unhandledRejection', (err) => {
-    logError({
+    log({
+        level: 'error',
+        message: 'Process error',
+
         context: 'server',
         event: 'unhandledRejection',
         error: err
