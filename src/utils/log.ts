@@ -81,6 +81,6 @@ export function log(type: 'info' | 'error', data: Log): void {
     if (config.env === 'development') {
         console[consoleType](data)
     } else {
-        console[consoleType](JSON.stringify(data, null, 2))
+        console[consoleType](JSON.stringify(data).replace('{', '').replace('}', ''))
     }
 }
