@@ -1,5 +1,4 @@
 import { User } from '../api/User/UserEntity'
-import config from '../config'
 
 type Log = {
     type?: 'info'
@@ -78,9 +77,9 @@ export function log(type: 'info' | 'error', data: Log): void {
     data.type = type
     let consoleType: 'log' | 'info' | 'error' = type
     if (type === 'info') consoleType = 'log'
-    if (config.env === 'development') {
-        console[consoleType](data)
-    } else {
-        console[consoleType](JSON.stringify(data))
-    }
+    // if (config.env === 'development') {
+    console[consoleType](data)
+    // } else {
+    //     console[consoleType](JSON.stringify(data))
+    // }
 }
