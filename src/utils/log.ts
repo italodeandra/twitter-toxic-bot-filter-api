@@ -1,5 +1,5 @@
 import config from '../config'
-import winston from 'winston'
+import winston, { LogEntry, Logger } from 'winston'
 
 const logger = winston.createLogger({
     format: winston.format.json(),
@@ -11,4 +11,6 @@ if (config.env !== 'production') {
     }))
 }
 
-export default logger.log
+export default function log(entry: LogEntry): Logger {
+    return logger.log(entry)
+}
